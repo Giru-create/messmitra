@@ -1,0 +1,15 @@
+# Devpost Learn personal context
+/devpost/learner-profile.md
+
+# Environment variables & local credentials
+.env
+.env.*
+!.env.example
+
+# Next.js and dependencies
+node_modules/
+.next/
+out/
+build/
+dist/
+*.log

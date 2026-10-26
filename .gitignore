@@ -13,3 +13,9 @@ out/
 build/
 dist/
 *.log
+
+# Agent harness & skill files
+.agents/
+.claude/
+agent/
+skills-lock.json

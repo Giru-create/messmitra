@@ -6,6 +6,7 @@ import TabNavigation from '@/components/TabNavigation';
 import StudentFeedbackForm from '@/components/StudentFeedbackForm';
 import ToastNotification from '@/components/ToastNotification';
 import UrgentAlertsBanner from '@/components/UrgentAlertsBanner';
+import CommitteeDashboard from '@/components/CommitteeDashboard';
 import { FeedbackItem, ActiveTab } from '@/lib/types';
 import { getStoredFeedbacks, saveFeedbacks, clearStoredFeedbacks } from '@/lib/storage';
 import { DEMO_FEEDBACKS } from '@/lib/demoData';
@@ -229,43 +230,22 @@ export default function Page() {
 
         {/* Tab 2: Committee Dashboard */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            {/* Pinned Urgent Safety Alerts Banner */}
-            <UrgentAlertsBanner
-              urgentItems={urgentItems}
-              onTakeAction={handleTakeAction}
-            />
+          <CommitteeDashboard
+            feedbacks={feedbacks}
+            onToggleAction={(issueKey) => {
+              setFeedbacks((prev) => {
+                const target = prev.find((f) => f.issueKey === issueKey);
+                const nextState = !target?.actionImplemented;
+                const nextTimestamp = nextState ? new Date().toISOString() : undefined;
 
-            {/* Dashboard Overview */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Mess Committee Triage</h2>
-                  <p className="text-xs text-slate-500">
-                    Offline AI clusters and before-and-after impact will be finalized in Slices 4 & 5.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 font-bold">
-                    {criticalCount} Critical
-                  </span>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold">
-                    {feedbacks.length} Total
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
-                {feedbacks.length === 0 ? (
-                  <span>No complaints stored. Tap <strong>"Load Demo Data"</strong> in the top header!</span>
-                ) : (
-                  <span>
-                    Successfully triaged <strong>{feedbacks.length} hostel submissions</strong>. The urgent alerts above are auto-detected by the offline AI analyzer!
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+                return prev.map((f) =>
+                  f.issueKey === issueKey
+                    ? { ...f, actionImplemented: nextState, actionImplementedAt: nextTimestamp }
+                    : f
+                );
+              });
+            }}
+          />
         )}
 
         {/* Tab 3: Weekly Report */}

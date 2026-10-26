@@ -4,16 +4,18 @@ import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import TabNavigation from '@/components/TabNavigation';
 import StudentFeedbackForm from '@/components/StudentFeedbackForm';
+import ToastNotification from '@/components/ToastNotification';
+import UrgentAlertsBanner from '@/components/UrgentAlertsBanner';
 import { FeedbackItem, ActiveTab } from '@/lib/types';
 import { getStoredFeedbacks, saveFeedbacks, clearStoredFeedbacks } from '@/lib/storage';
 import { DEMO_FEEDBACKS } from '@/lib/demoData';
-import { Star, Clock, Sparkles, MessageSquare, Database, CheckCircle2 } from 'lucide-react';
+import { Star, Clock, MessageSquare, Database, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('student');
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [hasMounted, setHasMounted] = useState<boolean>(false);
-  const [notification, setNotification] = useState<{ message: string; urgency: string } | null>(null);
+  const [latestSubmission, setLatestSubmission] = useState<FeedbackItem | null>(null);
 
   // Client-side hydration safe loading
   useEffect(() => {
@@ -42,15 +44,7 @@ export default function Page() {
     };
 
     setFeedbacks((prev) => [item, ...prev]);
-
-    setNotification({
-      message: `Feedback recorded for ${item.meal.toUpperCase()}! Classified as: ${item.category.toUpperCase()} • ${item.urgency.toUpperCase()}`,
-      urgency: item.urgency,
-    });
-
-    setTimeout(() => {
-      setNotification(null);
-    }, 4000);
+    setLatestSubmission(item);
   };
 
   const handleLoadDemo = () => {
@@ -60,11 +54,7 @@ export default function Page() {
       }
     }
     setFeedbacks(DEMO_FEEDBACKS);
-    setNotification({
-      message: 'Loaded 14 realistic hostel demo entries across Breakfast, Lunch, Snacks & Dinner!',
-      urgency: 'low',
-    });
-    setTimeout(() => setNotification(null), 4000);
+    setLatestSubmission(DEMO_FEEDBACKS[0]);
   };
 
   const handleReset = () => {
@@ -72,14 +62,21 @@ export default function Page() {
     if (confirm('Clear all feedback entries from localStorage?')) {
       clearStoredFeedbacks();
       setFeedbacks([]);
-      setNotification({
-        message: 'All feedback data has been reset to an empty state.',
-        urgency: 'low',
-      });
-      setTimeout(() => setNotification(null), 3000);
+      setLatestSubmission(null);
     }
   };
 
+  const handleTakeAction = (item: FeedbackItem) => {
+    setFeedbacks((prev) =>
+      prev.map((f) =>
+        f.id === item.id || f.issueKey === item.issueKey
+          ? { ...f, actionImplemented: true, actionImplementedAt: new Date().toISOString() }
+          : f
+      )
+    );
+  };
+
+  const urgentItems = feedbacks.filter((f) => f.urgency === 'critical' || f.urgency === 'high');
   const criticalCount = feedbacks.filter((f) => f.urgency === 'critical').length;
 
   return (
@@ -100,20 +97,16 @@ export default function Page() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 space-y-6">
-        {/* Toast Notification */}
-        {notification && (
-          <div className="p-3.5 rounded-xl bg-amber-500 text-white font-medium text-xs sm:text-sm shadow-md flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-200" />
-              <span>{notification.message}</span>
-            </div>
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className="underline text-xs font-bold hover:text-amber-100 cursor-pointer ml-3 whitespace-nowrap"
-            >
-              View Dashboard →
-            </button>
-          </div>
+        {/* Dynamic Toast Notification for Recent Submission */}
+        {latestSubmission && (
+          <ToastNotification
+            item={latestSubmission}
+            onClose={() => setLatestSubmission(null)}
+            onViewDashboard={() => {
+              setActiveTab('dashboard');
+              setLatestSubmission(null);
+            }}
+          />
         )}
 
         {/* Tab 1: Student Feedback View */}
@@ -187,14 +180,17 @@ export default function Page() {
                           {item.actionImplemented && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
                               <CheckCircle2 className="w-2.5 h-2.5" />
-                              Action Taken
+                              Action Logged
                             </span>
                           )}
                         </div>
 
                         <div className="flex items-center gap-1.5 text-xs text-slate-400">
                           <Clock className="w-3.5 h-3.5" />
-                          <span>{new Date(item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} at {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span>
+                            {new Date(item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} at{' '}
+                            {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
                       </div>
 
@@ -202,18 +198,26 @@ export default function Page() {
                         "{item.feedbackText}"
                       </p>
 
-                      <div className="flex items-center gap-2 pt-1 border-t border-slate-100 text-[11px] text-slate-500">
-                        <span>Category: <strong className="text-slate-700 uppercase">{item.category}</strong></span>
-                        <span>•</span>
-                        <span>Urgency: <strong className={`${item.urgency === 'critical' ? 'text-red-600' : item.urgency === 'high' ? 'text-orange-600' : 'text-slate-700'} uppercase`}>{item.urgency}</strong></span>
-                        {item.issueTag && (
-                          <>
-                            <span>•</span>
-                            <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[10px]">
-                              {item.issueTag}
-                            </span>
-                          </>
-                        )}
+                      <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-100 text-[11px]">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold uppercase">
+                            {item.category}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-md font-bold uppercase border ${
+                              item.urgency === 'critical'
+                                ? 'bg-red-100 text-red-700 border-red-200'
+                                : item.urgency === 'high'
+                                ? 'bg-orange-100 text-orange-800 border-orange-200'
+                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                            }`}
+                          >
+                            {item.urgency}
+                          </span>
+                        </div>
+                        <span className="text-slate-400 italic">
+                          AI: {item.summary}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -225,23 +229,41 @@ export default function Page() {
 
         {/* Tab 2: Committee Dashboard */}
         {activeTab === 'dashboard' && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">Mess Committee Dashboard</h2>
-                <p className="text-xs text-slate-500">Urgency triage and issue clustering active in Slices 3–5.</p>
-              </div>
-              <span className="text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
-                {feedbacks.length} Submissions Stored
-              </span>
-            </div>
+          <div className="space-y-6">
+            {/* Pinned Urgent Safety Alerts Banner */}
+            <UrgentAlertsBanner
+              urgentItems={urgentItems}
+              onTakeAction={handleTakeAction}
+            />
 
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
-              {feedbacks.length === 0 ? (
-                <span>No complaints stored yet. Tap <strong>"Load Demo Data"</strong> in the top header to populate 14 realistic hostel entries!</span>
-              ) : (
-                <span>Loaded <strong>{feedbacks.length} records</strong> into localStorage. Next slices will parse these with offline AI into grouped cluster cards!</span>
-              )}
+            {/* Dashboard Overview */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Mess Committee Triage</h2>
+                  <p className="text-xs text-slate-500">
+                    Offline AI clusters and before-and-after impact will be finalized in Slices 4 & 5.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 font-bold">
+                    {criticalCount} Critical
+                  </span>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold">
+                    {feedbacks.length} Total
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                {feedbacks.length === 0 ? (
+                  <span>No complaints stored. Tap <strong>"Load Demo Data"</strong> in the top header!</span>
+                ) : (
+                  <span>
+                    Successfully triaged <strong>{feedbacks.length} hostel submissions</strong>. The urgent alerts above are auto-detected by the offline AI analyzer!
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         )}

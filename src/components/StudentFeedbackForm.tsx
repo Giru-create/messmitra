@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Star, Send, Coffee, Sun, Sunset, Moon, Sparkles, AlertCircle } from 'lucide-react';
 import { MealType, FeedbackItem } from '@/lib/types';
+import { analyzeFeedbackOffline } from '@/lib/analyzer';
 
 interface StudentFeedbackFormProps {
   onSubmit: (feedback: Omit<FeedbackItem, 'id' | 'createdAt' | 'actionImplemented'>) => void;
@@ -40,23 +41,26 @@ export default function StudentFeedbackForm({ onSubmit }: StudentFeedbackFormPro
     }
     setError('');
 
-    // Detect language simply: checks for Hinglish keywords
-    const hinglishPattern = /\b(me|thi|tha|hai|thaa|aur|kacchi|pani|namak|khana|sabzi|mila|bhi|bahut|kuch|kya|kyun|thandi|garam|roti|daal|chawal|chawal|keeda|insect)\b/i;
-    const isHinglish = hinglishPattern.test(feedbackText);
+    // Full Offline AI NLP Heuristic Analysis
+    const analysis = analyzeFeedbackOffline(
+      feedbackText.trim(),
+      meal,
+      rating,
+      issueTag || undefined
+    );
 
-    // Initial placeholder categorization (full NLP analyzer takes over in Slice 3)
     onSubmit({
       meal,
       rating,
       feedbackText: feedbackText.trim(),
-      language: isHinglish ? 'hinglish' : 'english',
+      language: analysis.language,
       issueTag: issueTag || undefined,
-      category: 'hygiene', // default placeholder for Slice 1
-      sentiment: rating >= 4 ? 'positive' : rating === 3 ? 'neutral' : 'negative',
-      urgency: rating === 1 ? 'critical' : rating === 2 ? 'high' : 'medium',
-      issueKey: 'unclassified-issue',
-      summary: feedbackText.trim().slice(0, 70),
-      suggestedAction: 'Review feedback and inspect meal preparation batch.',
+      category: analysis.category,
+      sentiment: analysis.sentiment,
+      urgency: analysis.urgency,
+      issueKey: analysis.issueKey,
+      summary: analysis.summary,
+      suggestedAction: analysis.suggestedAction,
     });
 
     // Auto-clear input

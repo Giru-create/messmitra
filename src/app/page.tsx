@@ -7,6 +7,7 @@ import StudentFeedbackForm from '@/components/StudentFeedbackForm';
 import ToastNotification from '@/components/ToastNotification';
 import UrgentAlertsBanner from '@/components/UrgentAlertsBanner';
 import CommitteeDashboard from '@/components/CommitteeDashboard';
+import WeeklyReportView from '@/components/WeeklyReportView';
 import { FeedbackItem, ActiveTab } from '@/lib/types';
 import { getStoredFeedbacks, saveFeedbacks, clearStoredFeedbacks } from '@/lib/storage';
 import { DEMO_FEEDBACKS } from '@/lib/demoData';
@@ -250,13 +251,7 @@ export default function Page() {
 
         {/* Tab 3: Weekly Report */}
         {activeTab === 'report' && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-3">
-            <h2 className="text-base font-bold text-slate-900">Weekly Mess Summary Report</h2>
-            <p className="text-xs text-slate-500">Weekly analytics and satisfaction breakdown will be finalized in Slice 6.</p>
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
-              Total feedback items stored in localStorage: <strong>{feedbacks.length}</strong>
-            </div>
-          </div>
+          <WeeklyReportView feedbacks={feedbacks} />
         )}
       </main>
 

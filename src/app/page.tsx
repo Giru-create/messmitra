@@ -1,16 +1,35 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import TabNavigation from '@/components/TabNavigation';
 import StudentFeedbackForm from '@/components/StudentFeedbackForm';
 import { FeedbackItem, ActiveTab } from '@/lib/types';
-import { Star, Clock, AlertTriangle, CheckCircle, Sparkles, MessageSquare } from 'lucide-react';
+import { getStoredFeedbacks, saveFeedbacks, clearStoredFeedbacks } from '@/lib/storage';
+import { DEMO_FEEDBACKS } from '@/lib/demoData';
+import { Star, Clock, Sparkles, MessageSquare, Database, CheckCircle2 } from 'lucide-react';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('student');
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [hasMounted, setHasMounted] = useState<boolean>(false);
   const [notification, setNotification] = useState<{ message: string; urgency: string } | null>(null);
+
+  // Client-side hydration safe loading
+  useEffect(() => {
+    setHasMounted(true);
+    const stored = getStoredFeedbacks();
+    if (stored.length > 0) {
+      setFeedbacks(stored);
+    }
+  }, []);
+
+  // Save to localStorage whenever feedbacks change after mount
+  useEffect(() => {
+    if (hasMounted) {
+      saveFeedbacks(feedbacks);
+    }
+  }, [feedbacks, hasMounted]);
 
   const handleNewFeedback = (
     newFeedback: Omit<FeedbackItem, 'id' | 'createdAt' | 'actionImplemented'>
@@ -24,7 +43,6 @@ export default function Page() {
 
     setFeedbacks((prev) => [item, ...prev]);
 
-    // Show temporary success feedback
     setNotification({
       message: `Feedback recorded for ${item.meal.toUpperCase()}! Classified as: ${item.category.toUpperCase()} • ${item.urgency.toUpperCase()}`,
       urgency: item.urgency,
@@ -36,13 +54,29 @@ export default function Page() {
   };
 
   const handleLoadDemo = () => {
-    alert('Demo data loader will be enabled in Slice 2!');
+    if (feedbacks.length > 0) {
+      if (!confirm('Replace current data with fresh 14-item hostel demo feedback?')) {
+        return;
+      }
+    }
+    setFeedbacks(DEMO_FEEDBACKS);
+    setNotification({
+      message: 'Loaded 14 realistic hostel demo entries across Breakfast, Lunch, Snacks & Dinner!',
+      urgency: 'low',
+    });
+    setTimeout(() => setNotification(null), 4000);
   };
 
   const handleReset = () => {
     if (feedbacks.length === 0) return;
-    if (confirm('Clear all feedback entries?')) {
+    if (confirm('Clear all feedback entries from localStorage?')) {
+      clearStoredFeedbacks();
       setFeedbacks([]);
+      setNotification({
+        message: 'All feedback data has been reset to an empty state.',
+        urgency: 'low',
+      });
+      setTimeout(() => setNotification(null), 3000);
     }
   };
 
@@ -92,20 +126,34 @@ export default function Page() {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
                   <MessageSquare className="w-4 h-4 text-amber-600" />
-                  <span>Recent Hostel Submissions</span>
+                  <span>Hostel Feedback Records</span>
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
                     {feedbacks.length}
                   </span>
                 </h3>
-                <span className="text-xs text-slate-400">Newest first</span>
+                {feedbacks.length > 0 && (
+                  <span className="text-xs text-slate-400">Persisted in localStorage</span>
+                )}
               </div>
 
               {feedbacks.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500">
-                  <p className="font-semibold text-sm">No feedback submitted yet</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Select a meal above, rate it, and submit a comment in English or Hinglish to see it appear here live!
-                  </p>
+                <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500 space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+                    <Database className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-800 text-sm">No feedback in storage yet</p>
+                    <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                      Submit a live rating above or load 14 realistic hostel complaints to explore how MessMitra groups and prioritizes feedback.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleLoadDemo}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition-colors cursor-pointer"
+                  >
+                    <Database className="w-4 h-4" />
+                    <span>Load 14 Demo Hostel Entries</span>
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-2.5">
@@ -136,11 +184,17 @@ export default function Page() {
                               Hinglish
                             </span>
                           )}
+                          {item.actionImplemented && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 className="w-2.5 h-2.5" />
+                              Action Taken
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-1.5 text-xs text-slate-400">
                           <Clock className="w-3.5 h-3.5" />
-                          <span>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span>{new Date(item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} at {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                       </div>
 
@@ -151,7 +205,15 @@ export default function Page() {
                       <div className="flex items-center gap-2 pt-1 border-t border-slate-100 text-[11px] text-slate-500">
                         <span>Category: <strong className="text-slate-700 uppercase">{item.category}</strong></span>
                         <span>•</span>
-                        <span>Urgency: <strong className={`${item.urgency === 'critical' ? 'text-red-600' : 'text-slate-700'} uppercase`}>{item.urgency}</strong></span>
+                        <span>Urgency: <strong className={`${item.urgency === 'critical' ? 'text-red-600' : item.urgency === 'high' ? 'text-orange-600' : 'text-slate-700'} uppercase`}>{item.urgency}</strong></span>
+                        {item.issueTag && (
+                          <>
+                            <span>•</span>
+                            <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[10px]">
+                              {item.issueTag}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -161,32 +223,36 @@ export default function Page() {
           </div>
         )}
 
-        {/* Tab 2: Committee Dashboard (Placeholder for Slice 1) */}
+        {/* Tab 2: Committee Dashboard */}
         {activeTab === 'dashboard' && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold text-slate-900">Mess Committee Dashboard</h2>
-                <p className="text-xs text-slate-500">Issue clustering and urgency triage will be active in Slices 3–5.</p>
+                <p className="text-xs text-slate-500">Urgency triage and issue clustering active in Slices 3–5.</p>
               </div>
               <span className="text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
-                {feedbacks.length} Submissions Logged
+                {feedbacks.length} Submissions Stored
               </span>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
-              💡 Switch to the <strong>Student Feedback</strong> tab to submit live entries. They are held in memory and will feed the dashboard clusters!
+              {feedbacks.length === 0 ? (
+                <span>No complaints stored yet. Tap <strong>"Load Demo Data"</strong> in the top header to populate 14 realistic hostel entries!</span>
+              ) : (
+                <span>Loaded <strong>{feedbacks.length} records</strong> into localStorage. Next slices will parse these with offline AI into grouped cluster cards!</span>
+              )}
             </div>
           </div>
         )}
 
-        {/* Tab 3: Weekly Report (Placeholder for Slice 1) */}
+        {/* Tab 3: Weekly Report */}
         {activeTab === 'report' && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-3">
             <h2 className="text-base font-bold text-slate-900">Weekly Mess Summary Report</h2>
-            <p className="text-xs text-slate-500">Weekly report card and satisfaction breakdown will be finalized in Slice 6.</p>
+            <p className="text-xs text-slate-500">Weekly analytics and satisfaction breakdown will be finalized in Slice 6.</p>
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
-              Current total complaints in memory: <strong>{feedbacks.length}</strong>
+              Total feedback items stored in localStorage: <strong>{feedbacks.length}</strong>
             </div>
           </div>
         )}

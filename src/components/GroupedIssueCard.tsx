@@ -136,22 +136,45 @@ export default function GroupedIssueCard({
         </div>
 
         {/* AI Action Box */}
-        <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>AI Corrective Remedy:</span>
+        <div className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+          cluster.actionImplemented
+            ? 'bg-emerald-50/90 border-emerald-300'
+            : 'bg-amber-50/80 border-amber-200/80'
+        }`}>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+              <Sparkles className={`w-3.5 h-3.5 ${cluster.actionImplemented ? 'text-emerald-600' : 'text-amber-600'}`} />
+              <span>{cluster.actionImplemented ? 'Action Active & Tracking Impact:' : 'AI Corrective Remedy:'}</span>
             </div>
             <p className="text-xs text-slate-700">
               {cluster.suggestedAction}
             </p>
+
+            {/* Before vs After inline badge */}
+            {cluster.actionImplemented && cluster.actionImplementedAt && (
+              <div className="pt-1 flex items-center gap-2 text-[11px] font-bold text-emerald-800">
+                <span className="px-2 py-0.5 rounded-md bg-emerald-200/70 border border-emerald-300">
+                  {(() => {
+                    const actionTime = new Date(cluster.actionImplementedAt).getTime();
+                    const before = cluster.items.filter((i) => new Date(i.createdAt).getTime() <= actionTime).length;
+                    const after = cluster.items.filter((i) => new Date(i.createdAt).getTime() > actionTime).length;
+                    const safeBefore = before > 0 ? before : 1;
+                    const drop = Math.max(0, Math.round(((safeBefore - after) / safeBefore) * 100));
+                    return `Impact: ${drop}% Complaint Reduction (${before} before vs ${after} after)`;
+                  })()}
+                </span>
+                <span className="text-[10px] text-emerald-600 font-normal">
+                  Implemented on {new Date(cluster.actionImplementedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+            )}
           </div>
 
           <button
             onClick={() => onToggleAction(cluster.issueKey)}
             className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap self-start sm:self-auto ${
               cluster.actionImplemented
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs'
                 : 'bg-white hover:bg-amber-100 text-amber-900 border border-amber-300'
             }`}
           >

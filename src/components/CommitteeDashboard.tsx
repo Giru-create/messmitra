@@ -15,6 +15,7 @@ import {
 import { FeedbackItem, MealType, CategoryType } from '@/lib/types';
 import UrgentAlertsBanner from './UrgentAlertsBanner';
 import GroupedIssueCard, { IssueCluster } from './GroupedIssueCard';
+import ImpactTracker from './ImpactTracker';
 
 interface CommitteeDashboardProps {
   feedbacks: FeedbackItem[];
@@ -172,6 +173,9 @@ export default function CommitteeDashboard({
 
       {/* Pinned Urgent Safety Alerts */}
       <UrgentAlertsBanner urgentItems={urgentItems} />
+
+      {/* Closed-Loop Impact Tracker */}
+      <ImpactTracker feedbacks={feedbacks} />
 
       {/* Grouped Issues Section */}
       <div className="space-y-4">

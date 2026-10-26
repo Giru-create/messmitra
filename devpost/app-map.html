@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MessMitra — App Map & Architecture Guide</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #f59e0b;
+      --primary-dark: #d97706;
+      --border: #e2e8f0;
+      --accent-red: #ef4444;
+      --accent-green: #10b981;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      margin: 0;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .badge {
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      border: 1px solid #fde68a;
+    }
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-top: 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+    .route-stop {
+      border-left: 3px solid var(--primary);
+      padding-left: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .file-path {
+      font-family: monospace;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: var(--primary-dark);
+      background: #fffbeb;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+    }
+    .code-box {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+    }
+    .diagram-container {
+      background: #f1f5f9;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+    svg {
+      max-width: 100%;
+      height: auto;
+    }
+    .tip-card {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h1>MessMitra <span class="badge">Architecture Map</span></h1>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">Commit 6f2de8b</span>
+    </div>
+    
+    <p><strong>MessMitra</strong> is a client-side Next.js web application empowering hostel students to anonymously report food complaints in English and Hinglish, and mess committees to cluster issues, triage critical hygiene risks, and measure before-and-after resolution impact.</p>
+
+    <h2>Data & Control Flow Architecture</h2>
+    <div class="diagram-container">
+      <svg viewBox="0 0 700 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Student Form -->
+        <rect x="20" y="40" width="160" height="70" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="2"/>
+        <text x="100" y="70" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#0f172a">Student Feedback Form</text>
+        <text x="100" y="90" font-family="sans-serif" font-size="10" text-anchor="middle" fill="#64748b">English / Hinglish Input</text>
+
+        <!-- Arrow 1 -->
+        <path d="M180 75 H240" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow)"/>
+        
+        <!-- Offline AI Analyzer -->
+        <rect x="240" y="40" width="180" height="70" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+        <text x="330" y="70" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#0f172a">Offline AI Analyzer</text>
+        <text x="330" y="90" font-family="sans-serif" font-size="10" text-anchor="middle" fill="#64748b">Rule-based NLP Engine</text>
+
+        <!-- Arrow 2 -->
+        <path d="M420 75 H480" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow)"/>
+
+        <!-- LocalStorage -->
+        <rect x="480" y="40" width="180" height="70" rx="8" fill="#ffffff" stroke="#10b981" stroke-width="2"/>
+        <text x="570" y="70" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#0f172a">Browser LocalStorage</text>
+        <text x="570" y="90" font-family="sans-serif" font-size="10" text-anchor="middle" fill="#10b981">Zero-cost persistence</text>
+
+        <!-- Arrow Down to Views -->
+        <path d="M570 110 V160 H100 V175" stroke="#64748b" stroke-width="2"/>
+        <path d="M330 160 V175" stroke="#64748b" stroke-width="2"/>
+        <path d="M570 160 V175" stroke="#64748b" stroke-width="2"/>
+
+        <!-- Views -->
+        <rect x="20" y="175" width="160" height="50" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+        <text x="100" y="205" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">1. Submission Toast</text>
+
+        <rect x="240" y="175" width="180" height="50" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+        <text x="330" y="195" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">2. Committee Triage</text>
+        <text x="330" y="210" font-family="sans-serif" font-size="9" text-anchor="middle" fill="#64748b">Clusters & Impact Tracker</text>
+
+        <rect x="480" y="175" width="180" height="50" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+        <text x="570" y="195" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">3. Weekly Report</text>
+        <text x="570" y="210" font-family="sans-serif" font-size="9" text-anchor="middle" fill="#64748b">Printable KPI Audit</text>
+
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 8 5 L 0 9 z" fill="#64748b" />
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <h2>Key Code Tour & Reference Stops</h2>
+
+    <div class="route-stop">
+      <p class="file-path">src/lib/analyzer.ts &bull; analyzeFeedbackOffline()</p>
+      <p>The core heuristic NLP engine. Inspects raw strings for hygiene triggers (e.g., <em>insect, keeda, kankad</em>) or temperature/shortage complaints in English and Hinglish. Assigns urgency, category, and normalized issue keys in &lt;5ms without external API calls.</p>
+    </div>
+
+    <div class="route-stop">
+      <p class="file-path">src/components/StudentFeedbackForm.tsx &bull; handleSubmit()</p>
+      <p>Handles the mobile-friendly input form (meal selection chips, 1-5 star rating, and Hinglish textarea). Passes user input directly to the analyzer and pushes the validated entry into state.</p>
+    </div>
+
+    <div class="route-stop">
+      <p class="file-path">src/components/ImpactTracker.tsx</p>
+      <p>The closed-loop impact engine. Calculates complaint frequency for each recurring issue <em>before</em> vs. <em>after</em> the committee's implementation timestamp, proving whether an intervention actually solved the student complaint.</p>
+    </div>
+
+    <div class="route-stop">
+      <p class="file-path">src/lib/storage.ts &bull; getStoredFeedbacks() / saveFeedbacks()</p>
+      <p>Encapsulates browser <code>localStorage</code> interactions with safe SSR mounting checks to prevent Next.js hydration mismatches.</p>
+    </div>
+
+    <h2>To Change This App, Start Here</h2>
+    <ul>
+      <li><strong>Add new Hinglish food keywords:</strong> Open <code>src/lib/analyzer.ts</code> and add tokens to <code>insectPattern</code>, <code>coldPattern</code>, or <code>shortagePattern</code>.</li>
+      <li><strong>Modify the demo records:</strong> Open <code>src/lib/demoData.ts</code> to customize the pre-loaded 14 hostel entries.</li>
+      <li><strong>Adjust UI color palette:</strong> Check <code>tailwind.config.ts</code> and component classes in <code>src/components/Header.tsx</code>.</li>
+    </ul>
+
+    <div class="tip-card">
+      <strong>A Practice to Reuse:</strong> Offline Heuristic Prototyping.<br>
+      Instead of depending on an external cloud LLM for early demos, starting with a rule-based offline NLP classifier gave MessMitra instant response times, zero billing overhead, and 100% demo reliability. An optional cloud LLM hook can always be layered on top later.
+    </div>
+
+    <h2 style="margin-top: 2rem;">How to Run Locally</h2>
+    <div class="code-box">
+npm install
+npm run dev
+# Open http://localhost:3000
+    </div>
+  </div>
+</body>
+</html>
